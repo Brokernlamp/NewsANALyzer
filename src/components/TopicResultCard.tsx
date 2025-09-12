@@ -3,13 +3,15 @@ import { humanizeNewspaper } from '../lib/format'
 interface TopicResultCardProps {
   newspaper: string
   url: string
+  onOpenPdf?: (url: string, title: string) => void
 }
 
-export default function TopicResultCard({ newspaper, url }: TopicResultCardProps) {
+export default function TopicResultCard({ newspaper, url, onOpenPdf }: TopicResultCardProps) {
   const displayName = humanizeNewspaper(newspaper)
 
   const handleClick = () => {
-    window.open(url, '_blank', 'noopener,noreferrer')
+    if (onOpenPdf) onOpenPdf(url, `${displayName} - ${'Topic PDF'}`)
+    else window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   return (
