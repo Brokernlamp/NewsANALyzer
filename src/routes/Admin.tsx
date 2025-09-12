@@ -51,6 +51,14 @@ export default function Admin() {
     }
 
     // Save to database
+    const archivePath = uploadData.filePath || uploadData.file_path || uploadData?.data?.filePath || uploadData?.data?.file_path || (() => {
+      try {
+        const u = new URL(uploadData.url)
+        return u.pathname
+      } catch {
+        return undefined
+      }
+    })()
     const dbResponse = await fetch('/.netlify/functions/sb-upsert', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -58,7 +66,9 @@ export default function Admin() {
         date: selectedDate,
         newspaper: selectedNewspaper,
         type: 'archive',
-        url: uploadData.url
+        url: uploadData.url,
+        file_id: uploadData.fileId || uploadData.file_id || uploadData?.data?.fileId || uploadData?.data?.file_id,
+        path: archivePath
       })
     })
 
@@ -110,6 +120,14 @@ export default function Admin() {
     }
 
     // Save to database
+    const originalPath = uploadData.filePath || uploadData.file_path || uploadData?.data?.filePath || uploadData?.data?.file_path || (() => {
+      try {
+        const u = new URL(uploadData.url)
+        return u.pathname
+      } catch {
+        return undefined
+      }
+    })()
     const dbResponse = await fetch('/.netlify/functions/sb-upsert', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -117,7 +135,9 @@ export default function Admin() {
         date: selectedDate,
         newspaper: selectedNewspaper,
         type: 'original',
-        url: uploadData.url
+        url: uploadData.url,
+        file_id: uploadData.fileId || uploadData.file_id || uploadData?.data?.fileId || uploadData?.data?.file_id,
+        path: originalPath
       })
     })
 

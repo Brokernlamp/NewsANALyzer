@@ -4,12 +4,6 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE) {
-  throw new Error('Missing Supabase environment variables')
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
-
 export const handler: Handler = async (event) => {
   const headers = {
     'Content-Type': 'application/json',
@@ -24,6 +18,16 @@ export const handler: Handler = async (event) => {
   }
 
   try {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE) {
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'Missing Supabase environment variables' })
+      }
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
+
     if (event.httpMethod === 'GET') {
       // Get all newspapers
       const { data, error } = await supabase

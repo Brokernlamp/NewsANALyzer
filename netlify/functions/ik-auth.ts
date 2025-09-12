@@ -4,10 +4,6 @@ const IMAGEKIT_PRIVATE_KEY = process.env.IMAGEKIT_PRIVATE_KEY
 const IMAGEKIT_PUBLIC_KEY = process.env.IMAGEKIT_PUBLIC_KEY
 const IMAGEKIT_URL_ENDPOINT = process.env.IMAGEKIT_URL_ENDPOINT
 
-if (!IMAGEKIT_PRIVATE_KEY || !IMAGEKIT_PUBLIC_KEY || !IMAGEKIT_URL_ENDPOINT) {
-  throw new Error('Missing ImageKit environment variables')
-}
-
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== 'GET') {
     return {
@@ -17,6 +13,19 @@ export const handler: Handler = async (event) => {
   }
 
   try {
+    if (!IMAGEKIT_PRIVATE_KEY || !IMAGEKIT_PUBLIC_KEY || !IMAGEKIT_URL_ENDPOINT) {
+      return {
+        statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
+        },
+        body: JSON.stringify({ error: 'Missing ImageKit environment variables' })
+      }
+    }
+
     // Generate token for client-side upload
     const token = Buffer.from(JSON.stringify({
       token: IMAGEKIT_PRIVATE_KEY,
