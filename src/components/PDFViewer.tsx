@@ -4,6 +4,33 @@ interface PDFViewerProps {
   onClose: () => void
 }
 
+function buildViewableUrl(originalUrl: string): { url: string; usedFallback: boolean } {
+  let parsed: URL | null = null
+  try {
+    parsed = new URL(originalUrl)
+  } catch {
+    return { url: originalUrl, usedFallback: false }
+  }
+
+  // Prefer inline rendering if ImageKit supports attachment toggle
+  if (parsed.searchParams && parsed.host.includes('imagekit')) {
+    if (!parsed.searchParams.has('ik-attachment')) {
+      parsed.searchParams.set('ik-attachment', 'false')
+    }
+    return { url: parsed.toString(), usedFallback: false }
+  }
+
+  // Android WebView often downloads PDFs instead of rendering
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : ''
+  const isAndroidWebView = ua.includes('android') || ua.includes('wv') || ua.includes('okhttp')
+  if (isAndroidWebView) {
+    const gview = 'https://docs.google.com/gview?embedded=1&url=' + encodeURIComponent(originalUrl)
+    return { url: gview, usedFallback: true }
+  }
+
+  return { url: originalUrl, usedFallback: false }
+}
+
 export default function PDFViewer({ url, title, onClose }: PDFViewerProps) {
   // Close on Escape
   if (typeof window !== 'undefined') {
@@ -11,6 +38,8 @@ export default function PDFViewer({ url, title, onClose }: PDFViewerProps) {
       if (e.key === 'Escape') onClose()
     }
   }
+
+  const { url: viewUrl, usedFallback } = buildViewableUrl(url)
 
   return (
     <div
@@ -25,7 +54,10 @@ export default function PDFViewer({ url, title, onClose }: PDFViewerProps) {
         <button onClick={onClose} className="text-white text-xl leading-none hover:opacity-80">✕</button>
       </div>
       <div className="flex-1 bg-white">
-        <iframe src={url} title={title} className="w-full h-full" />
+        {usedFallback && (
+          <div className="px-3 py-1 text-xs text-gray-600">Using fallback viewer for better compatibility.</div>
+        )}
+        <iframe src={viewUrl} title={title} className="w-full h-full" />
       </div>
     </div>
   )
