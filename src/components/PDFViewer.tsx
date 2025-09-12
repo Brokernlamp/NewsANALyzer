@@ -1,5 +1,3 @@
-import { ReactNode } from 'react'
-
 interface PDFViewerProps {
   url: string
   title: string

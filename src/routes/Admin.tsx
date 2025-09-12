@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { getTodayIST } from '../lib/format'
 import AdminLayout from '../components/admin/AdminLayout'
 import NewspaperSelect from '../components/admin/NewspaperSelect'
-import UploadCard from '../components/admin/UploadCard'
 import AssetsTable from '../components/admin/AssetsTable'
 import NewspaperManager from '../components/admin/NewspaperManager'
 import IssueBundleCard from '../components/admin/IssueBundleCard'
@@ -12,7 +11,8 @@ export default function Admin() {
   const [selectedNewspaper, setSelectedNewspaper] = useState('')
   const [refreshToken, setRefreshToken] = useState(0)
 
-  const handleFolderUpload = async (files: FileList) => {
+  // unused legacy flow removed
+  /* const handleFolderUpload = async (files: FileList) => {
     if (!selectedNewspaper) {
       throw new Error('Please select a newspaper first')
     }
@@ -75,9 +75,9 @@ export default function Admin() {
         throw new Error(dbData.error || `Failed to save ${file.name}`)
       }
     }
-  }
+  } */
 
-  const handleOriginalUpload = async (file: File) => {
+  /* const handleOriginalUpload = async (file: File) => {
     if (!selectedNewspaper) {
       throw new Error('Please select a newspaper first')
     }
@@ -144,7 +144,7 @@ export default function Admin() {
     if (!dbResponse.ok) {
       throw new Error(dbData.error || 'Failed to save to database')
     }
-  }
+  } */
 
   return (
     <AdminLayout>
