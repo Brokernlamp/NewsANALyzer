@@ -13,13 +13,11 @@ export default function NewspaperCard({ newspaper, originalUrl, summaryUrl, onOp
   const handleSummaryClick = () => {
     if (!summaryUrl) return
     if (onOpenPdf) onOpenPdf(summaryUrl, `${displayName} - Summary`)
-    else window.open(summaryUrl, '_blank', 'noopener,noreferrer')
   }
 
   const handleOriginalClick = () => {
     if (!originalUrl) return
     if (onOpenPdf) onOpenPdf(originalUrl, `${displayName} - Original`)
-    else window.open(originalUrl, '_blank', 'noopener,noreferrer')
   }
 
   return (

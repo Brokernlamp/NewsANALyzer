@@ -11,7 +11,6 @@ export default function TopicResultCard({ newspaper, url, onOpenPdf }: TopicResu
 
   const handleClick = () => {
     if (onOpenPdf) onOpenPdf(url, `${displayName} - ${'Topic PDF'}`)
-    else window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   return (
