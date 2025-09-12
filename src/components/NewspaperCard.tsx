@@ -23,7 +23,7 @@ export default function NewspaperCard({ newspaper, originalUrl, summaryUrl, onOp
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
         {displayName}
       </h3>
@@ -32,25 +32,27 @@ export default function NewspaperCard({ newspaper, originalUrl, summaryUrl, onOp
         <button
           onClick={handleSummaryClick}
           disabled={!summaryUrl}
-          className={`w-full px-4 py-2 rounded-lg font-medium transition-colors ${
+          className={`w-full px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
             summaryUrl
               ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
           }`}
         >
-          Summary
+          <span>📄</span>
+          <span>View Summary</span>
         </button>
         
         <button
           onClick={handleOriginalClick}
           disabled={!originalUrl}
-          className={`w-full px-4 py-2 rounded-lg font-medium transition-colors ${
+          className={`w-full px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
             originalUrl
               ? 'bg-gray-600 text-white hover:bg-gray-700'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
           }`}
         >
-          Original
+          <span>📰</span>
+          <span>View Original</span>
         </button>
       </div>
     </div>
