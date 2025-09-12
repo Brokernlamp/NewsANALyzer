@@ -5,18 +5,19 @@ interface UploadCardProps {
   description: string
   accept: string
   onUpload: (file: File) => Promise<void>
+  onUploadFolder?: (files: FileList) => Promise<void>
   disabled?: boolean
 }
 
-export default function UploadCard({ title, description, accept, onUpload, disabled = false }: UploadCardProps) {
+export default function UploadCard({ title, description, accept, onUpload, onUploadFolder, disabled = false }: UploadCardProps) {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const files = event.target.files
+    if (!files || files.length === 0) return
 
     try {
       setUploading(true)
@@ -29,7 +30,12 @@ export default function UploadCard({ title, description, accept, onUpload, disab
         setProgress(prev => Math.min(prev + 10, 90))
       }, 200)
 
-      await onUpload(file)
+      if (onUploadFolder && files.length > 1) {
+        await onUploadFolder(files)
+      } else {
+        const file = files[0]
+        await onUpload(file)
+      }
 
       clearInterval(progressInterval)
       setProgress(100)
@@ -61,6 +67,7 @@ export default function UploadCard({ title, description, accept, onUpload, disab
             type="file"
             accept={accept}
             onChange={handleFileChange}
+            {...(onUploadFolder ? { webkitdirectory: 'true' as unknown as boolean, multiple: true } : {})}
             disabled={disabled || uploading}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
           />

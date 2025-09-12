@@ -10,7 +10,7 @@ export default function Admin() {
   const [selectedDate, setSelectedDate] = useState(getTodayIST())
   const [selectedNewspaper, setSelectedNewspaper] = useState('')
 
-  const handleZipUpload = async (file: File) => {
+  const handleFolderUpload = async (files: FileList) => {
     if (!selectedNewspaper) {
       throw new Error('Please select a newspaper first')
     }
@@ -18,64 +18,60 @@ export default function Admin() {
     // Get ImageKit auth
     const authResponse = await fetch('/.netlify/functions/ik-auth')
     const authData = await authResponse.json()
-
     if (!authResponse.ok) {
       throw new Error(authData.error || 'Failed to get upload credentials')
     }
 
-    // Prepare file name and folder
     const dateParts = selectedDate.split('-')
-    const folder = `/news/${dateParts[0]}/${dateParts[1]}/${dateParts[2]}/${selectedNewspaper}/archive`
-    const fileName = `${selectedNewspaper}-${selectedDate}.zip`
+    const baseFolder = `/news/${dateParts[0]}/${dateParts[1]}/${dateParts[2]}/${selectedNewspaper}`
 
-    // Upload to ImageKit
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('fileName', fileName)
-    formData.append('folder', folder)
-    formData.append('useUniqueFileName', 'false')
-    formData.append('tags', `date:${selectedDate},paper:${selectedNewspaper},type:archive`)
+    for (const file of Array.from(files)) {
+      // Determine type by filename
+      const lower = file.name.toLowerCase()
+      const isSummary = lower.includes('summary') || lower.includes('bundle') || lower.endsWith('-summary.pdf')
+      const type: 'summary' | 'topic' = isSummary ? 'summary' : 'topic'
+      const folder = `${baseFolder}/${type}`
 
-    const uploadResponse = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Authorization': `Basic ${btoa(authData.publicKey + ':')}`
-      }
-    })
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('fileName', file.name)
+      formData.append('folder', folder)
+      formData.append('useUniqueFileName', 'false')
+      formData.append('tags', `date:${selectedDate},paper:${selectedNewspaper},type:${type}`)
 
-    const uploadData = await uploadResponse.json()
-
-    if (!uploadResponse.ok) {
-      throw new Error(uploadData.message || 'Upload failed')
-    }
-
-    // Save to database
-    const archivePath = uploadData.filePath || uploadData.file_path || uploadData?.data?.filePath || uploadData?.data?.file_path || (() => {
-      try {
-        const u = new URL(uploadData.url)
-        return u.pathname
-      } catch {
-        return undefined
-      }
-    })()
-    const dbResponse = await fetch('/.netlify/functions/sb-upsert', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        date: selectedDate,
-        newspaper: selectedNewspaper,
-        type: 'archive',
-        url: uploadData.url,
-        file_id: uploadData.fileId || uploadData.file_id || uploadData?.data?.fileId || uploadData?.data?.file_id,
-        path: archivePath
+      const uploadResponse = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Basic ${btoa(authData.publicKey + ':')}`
+        }
       })
-    })
+      const uploadData = await uploadResponse.json()
+      if (!uploadResponse.ok) {
+        throw new Error(uploadData.message || `Upload failed for ${file.name}`)
+      }
 
-    const dbData = await dbResponse.json()
+      const derivedPath = uploadData.filePath || uploadData.file_path || uploadData?.data?.filePath || uploadData?.data?.file_path || (() => {
+        try { return new URL(uploadData.url).pathname } catch { return undefined }
+      })()
 
-    if (!dbResponse.ok) {
-      throw new Error(dbData.error || 'Failed to save to database')
+      const dbResponse = await fetch('/.netlify/functions/sb-upsert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: selectedDate,
+          newspaper: selectedNewspaper,
+          type,
+          url: uploadData.url,
+          file_id: uploadData.fileId || uploadData.file_id || uploadData?.data?.fileId || uploadData?.data?.file_id,
+          path: derivedPath,
+          topic: !isSummary ? lower.replace(/\.pdf$/,'') : null
+        })
+      })
+      const dbData = await dbResponse.json()
+      if (!dbResponse.ok) {
+        throw new Error(dbData.error || `Failed to save ${file.name}`)
+      }
     }
   }
 
@@ -180,10 +176,11 @@ export default function Admin() {
       {/* Upload Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <UploadCard
-          title="Upload ZIP Archive"
-          description="Upload a ZIP file containing the day's bundle. This will be stored as an archive."
-          accept=".zip"
-          onUpload={handleZipUpload}
+          title="Upload Folder of PDFs"
+          description="Select a folder containing summary/topic PDFs. Each file will be uploaded individually."
+          accept=".pdf"
+          onUpload={async () => { /* unused in folder mode */ }}
+          onUploadFolder={handleFolderUpload}
           disabled={!selectedNewspaper}
         />
         
