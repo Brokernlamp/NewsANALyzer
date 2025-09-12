@@ -4,21 +4,22 @@ interface NewspaperCardProps {
   newspaper: string
   originalUrl: string | null
   summaryUrl: string | null
+  onOpenPdf?: (url: string, title: string) => void
 }
 
-export default function NewspaperCard({ newspaper, originalUrl, summaryUrl }: NewspaperCardProps) {
+export default function NewspaperCard({ newspaper, originalUrl, summaryUrl, onOpenPdf }: NewspaperCardProps) {
   const displayName = humanizeNewspaper(newspaper)
 
   const handleSummaryClick = () => {
-    if (summaryUrl) {
-      window.open(summaryUrl, '_blank', 'noopener,noreferrer')
-    }
+    if (!summaryUrl) return
+    if (onOpenPdf) onOpenPdf(summaryUrl, `${displayName} - Summary`)
+    else window.open(summaryUrl, '_blank', 'noopener,noreferrer')
   }
 
   const handleOriginalClick = () => {
-    if (originalUrl) {
-      window.open(originalUrl, '_blank', 'noopener,noreferrer')
-    }
+    if (!originalUrl) return
+    if (onOpenPdf) onOpenPdf(originalUrl, `${displayName} - Original`)
+    else window.open(originalUrl, '_blank', 'noopener,noreferrer')
   }
 
   return (

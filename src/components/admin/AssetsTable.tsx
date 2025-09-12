@@ -10,9 +10,10 @@ interface Asset {
 interface AssetsTableProps {
   date: string
   newspaper: string
+  refreshToken?: number
 }
 
-export default function AssetsTable({ date, newspaper }: AssetsTableProps) {
+export default function AssetsTable({ date, newspaper, refreshToken }: AssetsTableProps) {
   const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +22,7 @@ export default function AssetsTable({ date, newspaper }: AssetsTableProps) {
     if (date && newspaper) {
       fetchAssets()
     }
-  }, [date, newspaper])
+  }, [date, newspaper, refreshToken])
 
   const fetchAssets = async () => {
     try {

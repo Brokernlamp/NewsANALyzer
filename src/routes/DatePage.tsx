@@ -4,6 +4,7 @@ import { isValidISTDate } from '../lib/format'
 import { fetchIssues, fetchTopics } from '../api/queries'
 import DateBar from '../components/DateBar'
 import NewspaperCard from '../components/NewspaperCard'
+import PDFViewer from '../components/PDFViewer'
 import TopicPills from '../components/TopicPills'
 import { NewspaperCardSkeleton, TopicPillSkeleton, Skeleton } from '../components/Skeleton'
 
@@ -14,6 +15,8 @@ export default function DatePage() {
   const [topics, setTopics] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showPDF, setShowPDF] = useState(false)
+  const [currentPDF, setCurrentPDF] = useState<{ url: string; title: string } | null>(null)
 
   useEffect(() => {
     if (!date || !isValidISTDate(date)) {
@@ -82,6 +85,7 @@ export default function DatePage() {
                   newspaper={issue.newspaper}
                   originalUrl={issue.original_url}
                   summaryUrl={issue.summary_url}
+                  onOpenPdf={(url, title) => { setCurrentPDF({ url, title }); setShowPDF(true) }}
                 />
               ))}
             </div>
@@ -108,6 +112,9 @@ export default function DatePage() {
           )}
         </section>
       </main>
+      {showPDF && currentPDF && (
+        <PDFViewer url={currentPDF.url} title={currentPDF.title} onClose={() => setShowPDF(false)} />
+      )}
     </div>
   )
 }

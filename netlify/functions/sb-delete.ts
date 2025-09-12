@@ -4,11 +4,9 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE) {
-  throw new Error('Missing Supabase environment variables')
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
+  : null
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -19,7 +17,14 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    const { date, newspaper, types, fileIds, nullIssues } = JSON.parse(event.body || '{}')
+    if (!supabase) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Missing Supabase environment variables' })
+      }
+    }
+
+    const { id, date, newspaper, types, fileIds, nullIssues } = JSON.parse(event.body || '{}')
 
     if (!date || !newspaper) {
       return {
@@ -30,8 +35,23 @@ export const handler: Handler = async (event) => {
 
     const results = []
 
+    // Delete a single file by id
+    if (id) {
+      const { data: deletedRows, error: delErr } = await supabase
+        .from('files')
+        .delete()
+        .eq('id', id)
+        .select()
+
+      if (delErr) {
+        throw new Error(`Files delete error: ${delErr.message}`)
+      }
+
+      results.push({ table: 'files', deleted: deletedRows })
+    }
+
     // Delete files rows
-    if (types && types.length > 0) {
+    if (!id && types && types.length > 0) {
       const { data: filesData, error: filesError } = await supabase
         .from('files')
         .delete()

@@ -5,10 +5,12 @@ import NewspaperSelect from '../components/admin/NewspaperSelect'
 import UploadCard from '../components/admin/UploadCard'
 import AssetsTable from '../components/admin/AssetsTable'
 import NewspaperManager from '../components/admin/NewspaperManager'
+import IssueBundleCard from '../components/admin/IssueBundleCard'
 
 export default function Admin() {
   const [selectedDate, setSelectedDate] = useState(getTodayIST())
   const [selectedNewspaper, setSelectedNewspaper] = useState('')
+  const [refreshToken, setRefreshToken] = useState(0)
 
   const handleFolderUpload = async (files: FileList) => {
     if (!selectedNewspaper) {
@@ -175,22 +177,7 @@ export default function Admin() {
 
       {/* Upload Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <UploadCard
-          title="Upload Folder of PDFs"
-          description="Select a folder containing summary/topic PDFs. Each file will be uploaded individually."
-          accept=".pdf"
-          onUpload={async () => { /* unused in folder mode */ }}
-          onUploadFolder={handleFolderUpload}
-          disabled={!selectedNewspaper}
-        />
-        
-        <UploadCard
-          title="Upload Original PDF"
-          description="Upload the original e-paper PDF. This will update the issues table and create a files entry."
-          accept=".pdf"
-          onUpload={handleOriginalUpload}
-          disabled={!selectedNewspaper}
-        />
+        <IssueBundleCard date={selectedDate} newspaper={selectedNewspaper} disabled={!selectedNewspaper} />
       </div>
 
       {/* Assets Management */}
@@ -198,8 +185,61 @@ export default function Admin() {
         <AssetsTable
           date={selectedDate}
           newspaper={selectedNewspaper}
+          refreshToken={refreshToken}
         />
       )}
+
+      {/* Issue Actions */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Issue Actions</h3>
+        <div className="flex items-center gap-3">
+          <button
+            className="px-4 py-2 rounded-lg bg-red-600 text-white disabled:opacity-50"
+            disabled={!selectedDate || !selectedNewspaper}
+            onClick={async () => {
+              if (!confirm('Delete the entire issue (files in DB + ImageKit)?')) return
+              try {
+                // 1) Get files for this issue
+                const listRes = await fetch(`/.netlify/functions/sb-files?date=${selectedDate}&newspaper=${selectedNewspaper}`)
+                const listData = await listRes.json()
+                if (!listRes.ok) throw new Error(listData.error || 'Failed to list files')
+
+                const fileIds = (listData.data || []).map((f: any) => f.file_id).filter(Boolean)
+
+                // 2) Delete from ImageKit (best-effort)
+                if (fileIds.length > 0) {
+                  await fetch('/.netlify/functions/ik-delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileIds })
+                  })
+                }
+
+                // 3) Delete DB rows and null out issue URLs
+                const delRes = await fetch('/.netlify/functions/sb-delete', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    date: selectedDate,
+                    newspaper: selectedNewspaper,
+                    types: ['original', 'summary', 'topic'],
+                    nullIssues: ['original_url', 'summary_url']
+                  })
+                })
+                const delData = await delRes.json()
+                if (!delRes.ok) throw new Error(delData.error || 'Failed to delete issue records')
+
+                setRefreshToken(t => t + 1)
+                alert('Issue deleted')
+              } catch (e) {
+                alert(e instanceof Error ? e.message : 'Delete failed')
+              }
+            }}
+          >
+            Delete Entire Issue
+          </button>
+        </div>
+      </div>
 
       {/* Newspaper Management */}
       <NewspaperManager />
