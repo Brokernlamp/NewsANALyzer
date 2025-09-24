@@ -1,4 +1,4 @@
-# Babdi
+# NewsAlyzer
 
 A simple React TypeScript SPA for viewing daily newspapers and topic-wise PDFs. Built with Vite, React Router, and Supabase.
 
